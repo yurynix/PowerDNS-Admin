@@ -1,50 +1,55 @@
 version: '2'
 
 services:
-
   powerdns-authoritative:
-    image: winggundamth/powerdns-mysql:trusty
+    image: interlegis/powerdns:4.0.1-1
     hostname: powerdns-authoritative
     depends_on:
-      - powerdns-authoritative-mariadb
+      - powerdns-authoritative-mysql
     links:
-      - powerdns-authoritative-mariadb:mysqldb
+      - powerdns-authoritative-mysql:mysql
     ports:
-      - 172.17.0.1:53:53/udp
+      - 53:53
+      - 53:53/udp
       - 8081:8081
     environment:
-      - PDNS_DB_HOST=mysqldb
-      - PDNS_DB_USERNAME=root
-      - PDNS_DB_NAME=powerdns
-      - PDNS_DB_PASSWORD=PowerDNSPassword
-      - PDNS_API_KEY=PowerDNSAPIKey
+      - PDNSCONF_API_KEY=my_awesome_API-123
+      - PDNSCONF_MASTER=yes
+      - PDNSCONF_DEFAULT_SOA_NAME=ns-awesome.sawbuck.com
+      - MYSQL_ENV_MYSQL_DATABASE=pdns
+      - MYSQL_ENV_MYSQL_USER=pdns
+      - MYSQL_ENV_MYSQL_PASSWORD=pdnspw
 
-  powerdns-authoritative-mariadb:
-    image: mariadb:10.1.15
-    hostname: powerdns-authoritative-mariadb
+  powerdns-authoritative-mysql:
+    image: mariadb
+    hostname: powerdns-authoritative-mysql
     environment:
-      - MYSQL_DATABASE=powerdns
-      - MYSQL_ROOT_PASSWORD=PowerDNSPassword
+      - MYSQL_ROOT_PASSWORD=mysqlrootpw
+      - MYSQL_DATABASE=pdns
+      - MYSQL_USER=pdns
+      - MYSQL_PASSWORD=pdnspw
 
   powerdns-admin:
-    image: winggundamth/powerdns-admin:trusty
+    image: powerdns-admin
     hostname: powerdns-admin
     depends_on:
-      - powerdns-admin-mariadb
+      - powerdns-admin-mysql
       - powerdns-authoritative
     links:
-      - powerdns-admin-mariadb:mysqldb
+      - powerdns-admin-mysql:mysql
       - powerdns-authoritative:powerdns-server
     volumes:
-      - ./:/home/web/powerdns-admin
+      - /Users/yury/powerdns-with-admin/PowerDNS-Admin:/home/web/powerdns-admin
     ports:
       - 9393:9393
     environment:
       - WAITFOR_DB=60
 
-  powerdns-admin-mariadb:
-    image: mariadb:10.1.15
-    hostname: powerdns-admin-mariadb
+  powerdns-admin-mysql:
+    image: mariadb
+    hostname: powerdns-admin-mysql
     environment:
+      - MYSQL_ROOT_PASSWORD=mysqlrootpw
       - MYSQL_DATABASE=powerdns-admin
-      - MYSQL_ROOT_PASSWORD=PowerDNSAdminPassword
+      - MYSQL_USER=powerdns-admin
+      - MYSQL_PASSWORD=powerdns-adminpw
